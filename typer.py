@@ -548,7 +548,17 @@ def main_curses(stdscr):
                         
                 elif ch == 3:  # Ctrl+C
                     raise KeyboardInterrupt
-                    
+                
+                # MODIFICATION: Added shortcut to end the typing phase
+                elif ch == 24: # CTRL+X shortcut
+                    # This ends the round, calculating stats based on progress.
+                    # CTRL+. was requested, but it's not a standard key code.
+                    # CTRL+X (ASCII 24) is a reliable alternative.
+                    # To use a different key, change the value '24'.
+                    if game.start_time is None:
+                        game.start_time = time.time() # Ensure timer has started
+                    break # Exit the typing loop
+
                 elif 32 <= ch <= 126:  # Printable ASCII
                     # Start timer on first character
                     if game.start_time is None:
@@ -574,11 +584,17 @@ def main_curses(stdscr):
                     ui.render_game_screen(game)
                     last_wpm = current_wpm
             
-            # Quote completed with full accuracy
+            # Quote completed (or shortcut was used)
             game.end_time = time.time()
-            final_wpm = game.calculate_wpm()
-            elapsed_time = game.end_time - game.start_time
             
+            # This check handles the case where the shortcut was used before any typing
+            if game.start_time is None:
+                final_wpm = 0.0
+                elapsed_time = 0.0
+            else:
+                final_wpm = game.calculate_wpm()
+                elapsed_time = game.end_time - game.start_time
+
             # Calculate reward tier
             tier = game.calculate_tier(final_wpm, game.errors)
             
